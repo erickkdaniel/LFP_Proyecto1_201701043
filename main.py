@@ -1,4 +1,8 @@
 from typing import List
+from enum import Enum
+class tipo(Enum):
+    TEXTO=1
+    NUMERO=2
 
 class Token:
     def __init__(self,tok,lex,fila,colu):
@@ -68,10 +72,12 @@ def Analysis(tx):
     EstadoInicial()
 
 def EstadoInicial():
+    global Fila,Columna
     actualC=getChar()
     while actualC:
         if actualC.isalpha():
             aux = Letras()
+            NToken = Token(tipo.TEXTO,aux,Fila,Columna)
             print(aux)
         elif actualC == '"':
             aux = Cadenas(True)
@@ -168,9 +174,7 @@ def Arrobas(cant):
     if cant==0:
         return ""
     if getChar()=="@":
-        
         Concat = kpopChar()+Arrobas(cant-1)
-        
         return Concat
     else:
         return ""
@@ -217,7 +221,7 @@ CELDAS = {
 [0,1,FALSE,#000000],
 [3,3,FALSE,#000000],
 [3,4,TRUE,#000000],
-    [3,5,TRUE,#000000],
+[3,5,TRUE,#000000],
 [3,6,TRUE,#000000],
 [3,7,TRUE,#000000],
 [4,1,FALSE,#000000]
@@ -237,4 +241,4 @@ CELDAS = {
 };
 FILTROS = MIRRORX,MIRRORY,DOUBLEMIRROR;
 """
-Analysis(strin)
+#Analysis(strin)
