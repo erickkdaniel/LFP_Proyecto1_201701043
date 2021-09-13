@@ -19,6 +19,7 @@ class tipo(Enum):
     ESPACIO = 15
     COMILLAS = 16
     FILTRO = 17
+    RESERVADA=18
 class Token:
     def __init__(self,tok,lex,fila,colu):
         self.token=tok
@@ -40,13 +41,17 @@ class Celda:
     def setPaint(self, paint):
         if paint.upper() == "TRUE":
             self.paint == True
-    
+class tipoE(Enum):
+    NOIDENTIFICADO=1
+    MAYUSCULA=2
+    SINTACTICO=3    
 class Error:
-    def __init__(self,  type, char,fila,colum):
+    def __init__(self,  type, char,fila,colum,desc):
         self.fila = fila
         self.colum = colum
         self.type = type
         self.char = char
+        self.desc = desc
 
 class Document:
     def __init__(self, doc,namedoc):
@@ -74,7 +79,8 @@ class Draw:
         self.mirrorx = False
         self.mirrory = False
         self.doublemirror = False
-        self.last = "" 
+        self.last = ""
+        self.Pixeleable = True
     def addCelda(self,celd):
         self.celdas.append(celd)
     def addFilter(self, filt):
@@ -131,6 +137,8 @@ def EstadoInicial():
     nceld = 1
     actualD = Draw()
     TokensDraw = []
+    ErrorDraw = []
+    arrobas=""
     while actualC:
         if actualC.isalpha():
             aux = Letras()
@@ -138,23 +146,91 @@ def EstadoInicial():
             print(aux)
             if aux == "FALSE" or aux == "TRUE":
                 celdtemp.setPaint(aux)
+                NToken = Token(tipo.BOOL,aux,Fila,Columna)
+                TokensDraw.append(NToken)
                 nceld == 4
             elif aux == "MIRRORX" or aux == "MIRRORY" or aux == "DOUBLEMIRROR":
                 actualD.addFilter(aux)
-            else:
-                NToken = Token(tipo.TEXTO,aux,Fila,Columna)
+                NToken = Token(tipo.FILTRO,aux,Fila,Columna)
                 TokensDraw.append(NToken)
-                actualD.addlast(aux)
+            else:
+                if aux == "TITULO":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    actualD.addlast(aux)
+                elif aux == "ANCHO":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    actualD.addlast(aux)
+                elif aux == "ALTO":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    actualD.addlast(aux)
+                elif aux == "FILAS":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    actualD.addlast(aux)
+                elif aux == "COLUMNAS":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    actualD.addlast(aux)
+                elif aux == "CELDAS":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    actualD.addlast(aux)
+                elif aux.upper() == "TITULO":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    NError = Error(tipoE.MAYUSCULA,aux,Fila,Columna,"La palabra reservada era en mayusculas, pero se corrigio")
+                    ErrorDraw.append(NError)
+                    actualD.addlast(aux.upper())
+                elif aux.upper() == "ANCHO":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    NError = Error(tipoE.MAYUSCULA,aux,Fila,Columna,"La palabra reservada era en mayusculas, pero se corrigio")
+                    ErrorDraw.append(NError)
+                    actualD.addlast(aux.upper())
+                elif aux.upper() == "ALTO":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    NError = Error(tipoE.MAYUSCULA,aux,Fila,Columna,"La palabra reservada era en mayusculas, pero se corrigio")
+                    ErrorDraw.append(NError)
+                    actualD.addlast(aux.upper())
+                elif aux.upper() == "FILAS":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    NError = Error(tipoE.MAYUSCULA,aux,Fila,Columna,"La palabra reservada era en mayusculas, pero se corrigio")
+                    ErrorDraw.append(NError)
+                    actualD.addlast(aux.upper())
+                elif aux.upper() == "COLUMNAS":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    NError = Error(tipoE.MAYUSCULA,aux,Fila,Columna,"La palabra reservada era en mayusculas, pero se corrigio")
+                    ErrorDraw.append(NError)
+                    actualD.addlast(aux.upper())
+                elif aux.upper() == "CELDAS":
+                    NToken = Token(tipo.RESERVADA,aux,Fila,Columna)
+                    TokensDraw.append(NToken)
+                    NError = Error(tipoE.MAYUSCULA,aux,Fila,Columna,"La palabra reservada era en mayusculas, pero se corrigio")
+                    ErrorDraw.append(NError)
+                    actualD.addlast(aux.upper())
+
         elif actualC == '"':
             aux = Cadenas(True)
+            NToken = Token(tipo.COMILLAS,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             print(aux)
         elif actualC == "=":
             aux = kpopChar()
+            NToken = Token(tipo.IGUAL,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             print(aux)
             bol = True
 
         elif actualC.isnumeric():
             aux = Numeros()
+            NToken = Token(tipo.NUMERO,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             print(aux)
             if bol :
                 actualD.addParame(aux)
@@ -169,31 +245,48 @@ def EstadoInicial():
                 celdtemp.setCx(aux)
                 Celds.append(celdtemp)
             else:
+                NError = Error(tipoE.SINTACTICO,aux,Fila,Columna,"No se esperaba un numero")
+                ErrorDraw.append(NError)
+                actualD.Pixeleable = False
                 print("Error sintactico")
         elif actualC == "#":
             aux = Numeral()
+            NToken = Token(tipo.NUMERAL,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             print(aux)
         elif actualC == "{":
             Celds = []
             aux = kpopChar()
+            NToken = Token(tipo.LLAVEA,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             print(aux)
         elif actualC == "}":
             actualD.addCeldas(Celds)
+            NToken = Token(tipo.LLAVEC,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             aux = kpopChar()
             print(aux)
         elif actualC == "[":
+            NToken = Token(tipo.CORCHETEA,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             nceld = 1
             celdtemp = Celda()
             bolc = True
             aux = kpopChar()
             print(aux)
         elif actualC == "]":
+            NToken = Token(tipo.CORCHETEC,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             aux = kpopChar()
             print(aux)
         elif actualC == ",":
+            NToken = Token(tipo.COMA,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             aux = kpopChar()
             print(aux)
         elif actualC == ";":
+            NToken = Token(tipo.PUNTOCOMA,aux,Fila,Columna)
+            TokensDraw.append(NToken)
             aux = kpopChar()
             print(aux)
         elif actualC == "\n":
@@ -202,19 +295,29 @@ def EstadoInicial():
             aux = kpopChar()
         elif actualC == "@":
             aux = Arrobas(4)
+            arrobas = arrobas+aux
             if len(aux)!=4:
-                print("No hay 4 @")
+                Token(tipo.ARROBA,arrobas,Fila,Columna)
+                NError = Error(tipoE.SINTACTICO,aux,Fila,Columna,'Se esperaban 4 "@", pero fue corregido')
+                ErrorDraw.append(NError)
+                print(arrobas)
+                if len(actualD.celdas) != 0:
+                    ListDraws.append(actualD)
+                    actualD=Draw()
             else:
                 ListDraws.append(actualD)
                 print(aux)
                 actualD=Draw()
+                
         elif actualC == "\t":
             aux = kpopChar()
         else:
             print("Error Simbolo no definido"+str(actualC))
+            NError = Error(tipoE.NOIDENTIFICADO,aux,Fila,Columna,'El simbolo "'+str(actualC)+'" no fue definido')
+            ErrorDraw.append(NError)
+            actualD.Pixeleable = False
             kpopChar()
         actualC=getChar()
-    
     ListDraws.append(actualD)
 
 def Letras():
@@ -294,8 +397,8 @@ def AddDoc(dx):
     doc = open(dx)
     text = doc.read()
     dxn = dx.split("/")
-    print(dxn[-1])
-    ListDoc.append(Document(text,str(dxn[-1].replace(".lfp",""))))
+    namedocdx = dxn[-1]
+    ListDoc.append(Document(text,namedocdx))
     print(ListDoc[0].namedoc)
 
 
@@ -325,7 +428,7 @@ CELDAS = {
 [4,1,FALSE,#000000]
 };
 FILTROS = MIRRORX;
-@@@@
+@@@@@@@
 TITULO="Estrella";
 ANCHO=300;
 ALTO=300;
