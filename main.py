@@ -2,6 +2,7 @@ from tkinter.constants import FALSE, N, TRUE
 from tkinter.font import families
 from typing import List
 from enum import Enum
+import os
 class tipo(Enum):
     TEXTO=1
     NUMERO=2
@@ -60,12 +61,20 @@ class Document:
         self.draws=[]
         self.tokens = []
         self.errors=[]
+        self.Reportable = False
     def addDraw(self, draw):
         self.draws.append(draw)
     def addTokens(self,token):
         self.tokens.append(token)
     def addError(self,error):
         self.errors.append(error)
+    def Report(self):
+        self.Reportable = True
+    def ReportError(self):
+        if len(self.errors)==0:
+            return False
+        else:
+            return True
 
 class Draw:
     def __init__(self):
@@ -89,6 +98,7 @@ class Draw:
         return self.filtros
     def addParame(self,val):
         if self.last.upper()=="TITULO": 
+            print("Se agrego en dibujo "+val)
             self.nameDraw = val
         elif self.last.upper()=="ANCHO": 
             self.pxX = val
@@ -114,30 +124,33 @@ class Draw:
 
 ListDoc = []
 ListDraws = []
+TokensDraw = []
+ErrorDraw = []
 IdDraws = 1
 Fila = 0
 Columna = 0
 Indice = 0
 Texto = ""
 def Analysis(tx):
-    global Texto,Columna,Indice,Fila,ListDraws,ListDoc
+    global Texto,Columna,Indice,Fila,ListDraws,ListDoc,TokensDraw,ErrorDraw
     ListDraws=[]
     Fila = 1
     Columna = 1
     Indice = 0
     Texto = tx
     EstadoInicial()
+    ListDoc[-1].draws=ListDraws
+    ListDoc[-1].tokens=TokensDraw
+    ListDoc[-1].errors=ErrorDraw
+
 
 def EstadoInicial():
-    global Fila,Columna,ListDraws,ListDoc
-    
+    global Fila,Columna,ListDraws,ListDoc,TokensDraw,ErrorDraw
     actualC=getChar()
     bol=False
     bolc = False
     nceld = 1
     actualD = Draw()
-    TokensDraw = []
-    ErrorDraw = []
     arrobas=""
     while actualC:
         if actualC.isalpha():
@@ -219,6 +232,7 @@ def EstadoInicial():
             aux = Cadenas(True)
             NToken = Token(tipo.COMILLAS,aux,Fila,Columna)
             TokensDraw.append(NToken)
+            actualD.addParame(aux.replace('"',""))
             print(aux)
         elif actualC == "=":
             aux = kpopChar()
@@ -232,10 +246,7 @@ def EstadoInicial():
             NToken = Token(tipo.NUMERO,aux,Fila,Columna)
             TokensDraw.append(NToken)
             print(aux)
-            if bol :
-                actualD.addParame(aux)
-                bol=False
-            elif bolc and nceld == 1:
+            if bolc and nceld == 1:
                 celdtemp.setCx(aux)
                 nceld=2
             elif bolc and nceld == 2:
@@ -244,6 +255,9 @@ def EstadoInicial():
             elif bolc and nceld == 4:
                 celdtemp.setCx(aux)
                 Celds.append(celdtemp)
+            elif bol :
+                actualD.addParame(aux)
+                bol=False
             else:
                 NError = Error(tipoE.SINTACTICO,aux,Fila,Columna,"No se esperaba un numero")
                 ErrorDraw.append(NError)
@@ -285,7 +299,7 @@ def EstadoInicial():
             aux = kpopChar()
             print(aux)
         elif actualC == ";":
-            NToken = Token(tipo.PUNTOCOMA,aux,Fila,Columna)
+            NToken = Token(tipo.PUNTOCOMA,";",Fila,Columna)
             TokensDraw.append(NToken)
             aux = kpopChar()
             print(aux)
@@ -298,7 +312,7 @@ def EstadoInicial():
             arrobas = arrobas+aux
             if len(aux)!=4:
                 Token(tipo.ARROBA,arrobas,Fila,Columna)
-                NError = Error(tipoE.SINTACTICO,aux,Fila,Columna,'Se esperaban 4 "@", pero fue corregido')
+                NError = Error(tipoE.SINTACTICO,actualC,Fila,Columna,'Se esperaban 4 "@", pero fue corregido')
                 ErrorDraw.append(NError)
                 print(arrobas)
                 if len(actualD.celdas) != 0:
@@ -313,12 +327,13 @@ def EstadoInicial():
             aux = kpopChar()
         else:
             print("Error Simbolo no definido"+str(actualC))
-            NError = Error(tipoE.NOIDENTIFICADO,aux,Fila,Columna,'El simbolo "'+str(actualC)+'" no fue definido')
+            NError = Error(tipoE.NOIDENTIFICADO,actualC,Fila,Columna,'El simbolo "'+str(actualC)+'" no fue definido')
             ErrorDraw.append(NError)
             actualD.Pixeleable = False
             kpopChar()
         actualC=getChar()
     ListDraws.append(actualD)
+    
 
 def Letras():
     actual=getChar()
@@ -401,7 +416,37 @@ def AddDoc(dx):
     ListDoc.append(Document(text,namedocdx))
     print(ListDoc[0].namedoc)
 
+def ReportToken(doc):
+    named = doc.namedoc
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    file = open(dir_path+"\\ReporteTokens_"+named+".html", "w")
+    file.write('<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css"></head><body>')
+    file.write("<h1>Tokens del documento "+named+".</h1>")
+    file.write('<table class="styled-table"><thead><tr><td>No.</td><td>Tipo</td><td>Lexema</td><td>Fila</td><td>Columna</td></tr></thead>')
+    file.write("<tbody>")
+    ListT = doc.tokens
+    n=1
+    for i in ListT:
+        file.write('<tr><td>'+str(n)+'</td><td>'+str(i.token)+'</td><td>'+str(i.lexe)+'</td><td><B>'+str(i.fila)+'<br></td><td>'+str(i.colum)+'</td></tr>')
+        n+=1
+    file.write("</tbody></table>")
+    file.close()
 
+def ReportError(doc):
+    named = doc.namedoc
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    file = open(dir_path+"\\ReporteErrores_"+named+".html", "w")
+    file.write('<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css"></head><body>')
+    file.write("<h1>Tokens del documento "+named+".</h1>")
+    file.write('<table class="styled-table"><thead><tr><td>No.</td><td>Tipo</td><td>Lexema</td><td>Fila</td><td>Columna</td></tr></thead>')
+    file.write("<tbody>")
+    ListT = doc.errors
+    n=1
+    for i in ListT:
+        file.write('<tr><td>'+str(n)+'</td><td>'+str(i.type)+'</td><td>'+str(i.char)+'</td><td><B>'+str(i.fila)+'<br></td><td>'+str(i.colum)+'</td></tr>')
+        n+=1
+    file.write("</tbody></table>")
+    file.close()
 
 
 
@@ -428,7 +473,7 @@ CELDAS = {
 [4,1,FALSE,#000000]
 };
 FILTROS = MIRRORX;
-@@@@@@@
+@@@@
 TITULO="Estrella";
 ANCHO=300;
 ALTO=300;
@@ -442,4 +487,4 @@ CELDAS = {
 };
 FILTROS = MIRRORX,MIRRORY,DOUBLEMIRROR;
 """
-Analysis(strin)
+#Analysis(strin)

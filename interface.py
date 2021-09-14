@@ -3,8 +3,12 @@ from tkinter import *
 from tkinter import filedialog
 from main import Analysis, Document
 from main import AddDoc
-from main import ListDoc
+from main import ReportToken
+from main import ReportError
+from main import ListDoc , ListDraws
 listDocComb = []
+listDrawComb = []
+listDocAComb = []
 class Window(ttk.Frame):
     
     def __init__(self,wind):
@@ -37,15 +41,15 @@ class Window(ttk.Frame):
         self.combordocs.place(x=10,y=20,width=160)
         self.combordocs.set("Seleccione un documento...")
         selecdrdoc = self.combordocs.get()
-        ttk.Button(self.report_label,text="Tokens").place(x=10,y=60)
-        ttk.Button(self.report_label,text="Errores").place(x=10,y=90)
+        ttk.Button(self.report_label,text="Tokens",command=self.ReportarToken).place(x=10,y=60)
+        ttk.Button(self.report_label,text="Errores",command=self.ReportarError).place(x=10,y=90)
         #mostrarimagen------------------------------------------------------------------------------------------
         self.Imagen_label = ttk.Label(self.notebook)
         self.notebook.add(self.Imagen_label, text="Imagen", padding=20)
         self.combodraws = ttk.Combobox(self.Imagen_label,state="readonly")
         self.combodraws.place(x=10,y=20,width=160)
         self.combodraws.set("Seleccione una imagen...")
-        selecdraw = self.combodraws.get()
+        self.selecdraw = self.combodraws.get()
         ttk.Button(self.Imagen_label,text="Original").place(x=20,y=60,width=100)
         ttk.Button(self.Imagen_label,text="Mirror X").place(x=20,y=90,width=100)
         ttk.Button(self.Imagen_label,text="Mirrox Y").place(x=20,y=120,width=100)
@@ -70,13 +74,37 @@ class Window(ttk.Frame):
 
         
     def Analizar(self):
+        global listDocAComb,listDrawComb
         docselect = self.combodocsa.get()
         print(docselect)
         for doc in ListDoc:
             if doc.namedoc == docselect:
+                docac = doc
                 Analysis(doc.doc)
-        
+                print(ListDraws)
+                pass
+        listDrawComb = []
+        for draw in docac.draws:
+            print(draw.nameDraw)
+            listDrawComb.append(draw.nameDraw) 
+        print(listDrawComb)  
+        self.combodraws['values'] = listDrawComb
+        print(docac.namedoc)
+        listDocAComb.append(docac.namedoc) 
+        self.combordocs['values'] = listDocAComb
 
+    def ReportarToken(self):
+        docselect = self.combordocs.get()
+        print(docselect)
+        for doc in ListDoc:
+            if doc.namedoc == docselect:
+                ReportToken(doc)
+    def ReportarError(self):
+        docselect = self.combordocs.get()
+        print(docselect)
+        for doc in ListDoc:
+            if doc.namedoc == docselect:
+                ReportError(doc)
 
 windRoot = Tk()
 BitWindow = Window(windRoot)
