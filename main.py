@@ -21,6 +21,7 @@ class tipo(Enum):
     COMILLAS = 16
     FILTRO = 17
     RESERVADA=18
+    COLOR=19
 class Token:
     def __init__(self,tok,lex,fila,colu):
         self.token=tok
@@ -31,7 +32,7 @@ class Celda:
     def __init__(self):
         self.coorx = 0
         self.coory = 0
-        self.color = 0
+        self.color = ""
         self.paint = False
     def setCx(self, corx):
         self.coorx = corx
@@ -41,7 +42,7 @@ class Celda:
         self.color = color
     def setPaint(self, paint):
         if paint.upper() == "TRUE":
-            self.paint == True
+            self.paint = True
 class tipoE(Enum):
     NOIDENTIFICADO=1
     MAYUSCULA=2
@@ -131,19 +132,19 @@ Fila = 0
 Columna = 0
 Indice = 0
 Texto = ""
-def Analysis(tx):
+def Analysis(Doc):
     global Texto,Columna,Indice,Fila,ListDraws,ListDoc,TokensDraw,ErrorDraw
     ListDraws=[]
+    TokensDraw = []
+    ErrorDraw = []
     Fila = 1
     Columna = 1
     Indice = 0
-    Texto = tx
+    Texto = Doc.doc
     EstadoInicial()
-    ListDoc[-1].draws=ListDraws
-    ListDoc[-1].tokens=TokensDraw
-    ListDoc[-1].errors=ErrorDraw
-
-
+    Doc.draws=ListDraws
+    Doc.tokens=TokensDraw
+    Doc.errors=ErrorDraw
 def EstadoInicial():
     global Fila,Columna,ListDraws,ListDoc,TokensDraw,ErrorDraw
     actualC=getChar()
@@ -228,9 +229,15 @@ def EstadoInicial():
                     ErrorDraw.append(NError)
                     actualD.addlast(aux.upper())
 
+
+
         elif actualC == '"':
             aux = Cadenas(True)
-            NToken = Token(tipo.COMILLAS,aux,Fila,Columna)
+            NToken = Token(tipo.COMILLAS,'"',Fila,Columna)
+            TokensDraw.append(NToken)
+            NToken = Token(tipo.TEXTO,aux.replace('"',''),Fila,Columna)
+            TokensDraw.append(NToken)
+            NToken = Token(tipo.COMILLAS,'"',Fila,Columna)
             TokensDraw.append(NToken)
             actualD.addParame(aux.replace('"',""))
             print(aux)
@@ -250,11 +257,8 @@ def EstadoInicial():
                 celdtemp.setCx(aux)
                 nceld=2
             elif bolc and nceld == 2:
-                celdtemp.setCx(aux)
+                celdtemp.setCy(aux)
                 nceld=3
-            elif bolc and nceld == 4:
-                celdtemp.setCx(aux)
-                Celds.append(celdtemp)
             elif bol :
                 actualD.addParame(aux)
                 bol=False
@@ -264,24 +268,30 @@ def EstadoInicial():
                 actualD.Pixeleable = False
                 print("Error sintactico")
         elif actualC == "#":
-            aux = Numeral()
-            NToken = Token(tipo.NUMERAL,aux,Fila,Columna)
+            aux = Color(True).replace("]","")
+            celdtemp.setColor(aux)
+            Celds.append(celdtemp)
+            NToken = Token(tipo.NUMERAL,"#",Fila,Columna)
             TokensDraw.append(NToken)
+            NToken = Token(tipo.COLOR,aux,Fila,Columna)
+            TokensDraw.append(NToken)
+            NToken = Token(tipo.CORCHETEC,"]",Fila,Columna)
+            TokensDraw.append(NToken)            
             print(aux)
         elif actualC == "{":
             Celds = []
             aux = kpopChar()
-            NToken = Token(tipo.LLAVEA,aux,Fila,Columna)
+            NToken = Token(tipo.LLAVEA,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             print(aux)
         elif actualC == "}":
             actualD.addCeldas(Celds)
-            NToken = Token(tipo.LLAVEC,aux,Fila,Columna)
+            NToken = Token(tipo.LLAVEC,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             aux = kpopChar()
             print(aux)
         elif actualC == "[":
-            NToken = Token(tipo.CORCHETEA,aux,Fila,Columna)
+            NToken = Token(tipo.CORCHETEA,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             nceld = 1
             celdtemp = Celda()
@@ -289,17 +299,17 @@ def EstadoInicial():
             aux = kpopChar()
             print(aux)
         elif actualC == "]":
-            NToken = Token(tipo.CORCHETEC,aux,Fila,Columna)
+            NToken = Token(tipo.CORCHETEC,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             aux = kpopChar()
             print(aux)
         elif actualC == ",":
-            NToken = Token(tipo.COMA,aux,Fila,Columna)
+            NToken = Token(tipo.COMA,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             aux = kpopChar()
             print(aux)
         elif actualC == ";":
-            NToken = Token(tipo.PUNTOCOMA,";",Fila,Columna)
+            NToken = Token(tipo.PUNTOCOMA,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             aux = kpopChar()
             print(aux)
@@ -333,7 +343,6 @@ def EstadoInicial():
             kpopChar()
         actualC=getChar()
     ListDraws.append(actualD)
-    
 
 def Letras():
     actual=getChar()
@@ -344,6 +353,19 @@ def Letras():
         return Concat
     else:
         return ""
+def Color(bandera):
+    actual=getChar()
+    if actual is None:
+        return ""
+    if actual==']':
+        if bandera == False:
+            return kpopChar()
+        else:
+            Concat = kpopChar()+Color(False)
+            return Concat
+    else:
+        Concat = kpopChar()+Color(False)
+        return Concat
 def Cadenas(bandera):
     actual=getChar()
     if actual is None:
@@ -366,12 +388,13 @@ def Numeros():
         return Concat
     else:
         return ""
+
 def Numeral():
     actual=getChar()
     if actual is None:
         return ""
     if getChar()=="#":
-        Concat = kpopChar()+Numeros()
+        Concat = kpopChar()+Cadenas()
         return Concat
     else:
         return ""
@@ -437,25 +460,36 @@ def ReportError(doc):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     file = open(dir_path+"\\ReporteErrores_"+named+".html", "w")
     file.write('<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css"></head><body>')
-    file.write("<h1>Tokens del documento "+named+".</h1>")
-    file.write('<table class="styled-table"><thead><tr><td>No.</td><td>Tipo</td><td>Lexema</td><td>Fila</td><td>Columna</td></tr></thead>')
+    file.write("<h1>Errores del documento "+named+".</h1>")
+    file.write('<table class="styled-table"><thead><tr><td>No.</td><td>Tipo</td><td>Lexema</td><td>Fila</td><td>Columna</td><td>Descripción</td></tr></thead>')
     file.write("<tbody>")
     ListT = doc.errors
     n=1
     for i in ListT:
-        file.write('<tr><td>'+str(n)+'</td><td>'+str(i.type)+'</td><td>'+str(i.char)+'</td><td><B>'+str(i.fila)+'<br></td><td>'+str(i.colum)+'</td></tr>')
+        file.write('<tr><td>'+str(n)+'</td><td>'+str(i.type)+'</td><td>'+str(i.char)+'</td><td>'+str(i.fila)+'</td><td>'+str(i.colum)+'</td><td>'+str(i.desc)+'</td></tr>')
         n+=1
     file.write("</tbody></table>")
     file.close()
 
-
-
-
-
-
-
-
-
+def DibujarImagen(drawing):
+    named = drawing.nameDraw
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    file = open(dir_path+"\\Celdas_"+named+".html", "w")
+    file.write('<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css"></head><body>')
+    file.write("<h1>Tokens del documento "+named+".</h1>")
+    file.write('<table class="styled-table"><thead><tr><td>No.</td><td>CoorX</td><td>CoorY</td><td>Color</td><td>Pintar</td></thead>')
+    file.write("<tbody>")
+    ListC = drawing.celdas
+    n=1
+    for i in ListC:
+        if i.paint:
+            file.write('<tr><td>'+str(n)+'</td><td>'+str(i.coorx)+'</td><td>'+str(i.coory)+'</td><td>'+str(i.color)+'</td><td>SI</td></tr>')
+            n+=1
+        else:
+            file.write('<tr><td>'+str(n)+'</td><td>'+str(i.coorx)+'</td><td>'+str(i.coory)+'</td><td>'+str(i.color)+'</td><td>NO</td></tr>')
+            n+=1
+    file.write("</tbody></table>")
+    file.close()
 
 strin="""TITULO="Pokebola";
 ANCHO=300;
