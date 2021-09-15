@@ -2,6 +2,7 @@ from tkinter.constants import FALSE, N, TRUE
 from tkinter.font import families
 from typing import List
 from enum import Enum
+import imgkit
 import os
 class tipo(Enum):
     TEXTO=1
@@ -32,6 +33,7 @@ class Celda:
     def __init__(self):
         self.coorx = 0
         self.coory = 0
+        self.nceld = 0
         self.color = ""
         self.paint = False
     def setCx(self, corx):
@@ -127,6 +129,7 @@ ListDoc = []
 ListDraws = []
 TokensDraw = []
 ErrorDraw = []
+contcel = 0
 IdDraws = 1
 Fila = 0
 Columna = 0
@@ -490,35 +493,151 @@ def DibujarImagen(drawing):
             n+=1
     file.write("</tbody></table>")
     file.close()
+def ForFilt(Drawing):
+    DrawingStyle(Drawing,0)
+    if Drawing.mirrorx:
+        DrawingStyle(Drawing,1)
+    if Drawing.mirrory:
+        DrawingStyle(Drawing,2)
+    if Drawing.doublemirror:
+        DrawingStyle(Drawing,3)
+def DrawingStyle(Drawing,Filt):
+    named=Drawing.nameDraw
+    pixX=str(Drawing.pxX)
+    pixY=str(Drawing.PxY)
+    TamX=int(Drawing.pxX)/int(Drawing.nCol)
+    TamY=int(Drawing.PxY)/int(Drawing.nFil)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    if Filt == 0:
+        file = open(dir_path+"\\STYLE_0_"+named+".css", "w")
+    if Filt == 1:
+        file = open(dir_path+"\\STYLE_1_"+named+".css", "w")
+    if Filt == 2:
+        file = open(dir_path+"\\STYLE_2_"+named+".css", "w")
+    if Filt == 3:
+        file = open(dir_path+"\\STYLE_3_"+named+".css", "w")
+    file.write("""body {
+    background: #333333;
+    height: 100vh;            
+    display: flex;          
+    justify-content: center;  
+    align-items: center;      
+    }""")
+    file.write(".canvas {\n")
+    file.write("width: "+pixX+"px;\n")   #/* Ancho del lienzo, se asocia al ANCHO de la entrada */
+    file.write("height: "+pixY+"px;}\n")  #/* Alto del lienzo, se asocia al ALTO de la entrada */
+    file.write(".pixel {\n")
+    file.write("width: "+str(int(TamX))+"px;\n")    #/* Ancho de cada pixel, se obtiene al operar ANCHO/COLUMNAS (al hablar de pixeles el resultado de la división debe ser un numero entero) */
+    file.write("height: "+str(int(TamY))+"px;\n")   #/* Alto de cada pixel, se obtiene al operar ALTO/FILAS (al hablar de pixeles el resultado de la división debe ser un numero entero) */
+    file.write("float: left;\n")
+    file.write("box-shadow: 0px 0px 1px #fff;}\n") #/*Si lo comentan les quita la cuadricula de fondo */
+    if Filt == 0:
+        ForCeldsO(Drawing)
+    if Filt == 1:
+        ForCeldsMx(Drawing)
+    if Filt == 2:
+        ForCeldsMy(Drawing)
+    if Filt == 3:   
+        ForCeldsMxy(Drawing)
+    lsceld = Drawing.celdas
+    for cel in lsceld:
+        if cel.paint:
+            file.write(".pixel:nth-child("+str(cel.nceld)+"){background: "+str(cel.color)+";}\n")
 
-strin="""TITULO="Pokebola";
-ANCHO=300;
-ALTO=300;
-FILAS=12;
-COLUMNAS=12;
-CELDAS = {
-[0,0,FALSE,#000000],
-[0,1,FALSE,#000000],
-[3,3,FALSE,#000000],
-[3,4,TRUE,#000000],
-[3,5,TRUE,#000000],
-[3,6,TRUE,#000000],
-[3,7,TRUE,#000000],
-[4,1,FALSE,#000000]
-};
-FILTROS = MIRRORX;
-@@@@
-TITULO="Estrella";
-ANCHO=300;
-ALTO=300;
-FILAS=4;
-COLUMNAS=4;
-CELDAS = {
-[0,0,FALSE,#000000],
-[1,1,FALSE,#000000],
-[3,3,FALSE,#000000],
-[2,1,FALSE,#000000]
-};
-FILTROS = MIRRORX,MIRRORY,DOUBLEMIRROR;
-"""
-#Analysis(strin)
+    file.close()
+    DrawingHtml(Drawing,Filt)
+
+def DrawingHtml(Drawing,Filt):
+    named=Drawing.nameDraw
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    if Filt ==0:
+        file = open(dir_path+"\\HTML_0_"+named+".html", "w")
+        file.write("<!DOCTYPE html><html><head>")
+        file.write('<link rel="stylesheet" href="STYLE_0_'+named+'.css">')
+    elif Filt ==1:
+        file = open(dir_path+"\\HTML_1_"+named+".html", "w")
+        file.write("<!DOCTYPE html><html><head>")
+        file.write('<link rel="stylesheet" href="STYLE_1_'+named+'.css">')
+    elif Filt ==2:
+        file = open(dir_path+"\\HTML_2_"+named+".html", "w")
+        file.write("<!DOCTYPE html><html><head>")
+        file.write('<link rel="stylesheet" href="STYLE_2_'+named+'.css">')
+    elif Filt ==3:
+        file = open(dir_path+"\\HTML_3_"+named+".html", "w")
+        file.write("<!DOCTYPE html><html><head>")
+        file.write('<link rel="stylesheet" href="STYLE_3_'+named+'.css">')
+    file.write("</head>")
+    file.write("<body>)")
+    file.write('<div class="canvas">')
+    colD=int(Drawing.nCol)
+    filD=int(Drawing.nFil)
+    tcel = colD*filD
+    for i in range(0,tcel,1):
+        file.write('<div class="pixel"></div>')
+    file.write('</div>')
+    file.write('</body>')
+    file.write('</html>')
+    file.close()
+    if Filt == 0:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        imgkit.from_file(dir_path+"\\HTML_0_"+named+".html",dir_path+"\\D_0_"+named+".jpg")
+
+   
+
+
+def ForCeldsO(Drawing):
+    listac=Drawing.celdas
+    fil=int(Drawing.nFil)
+    col=int(Drawing.nCol)
+    n=1
+    for i in range(0,fil,1):
+        for j in range(0,col,1):
+            for cel in listac:
+                if int(cel.coorx) == j and int(cel.coory)==i:
+                    cel.nceld = n
+                    n=n+1
+def ForCeldsMy(Drawing):
+    listac=Drawing.celdas
+    fil=int(Drawing.nFil)
+    col=int(Drawing.nCol)
+    n=1
+    for i in range(fil,-1,-1):
+        for j in range(0,col,1):
+            for cel in listac:
+                if int(cel.coorx) == j and int(cel.coory)==i:
+                    cel.nceld = n
+                    n=n+1
+def ForCeldsMx(Drawing):
+    listac=Drawing.celdas
+    fil=int(Drawing.nFil)
+    col=int(Drawing.nCol)
+    n=1
+    for i in range(0,fil,1):
+        for j in range(col,-1,-1):
+            for cel in listac:
+                if int(cel.coorx) == j and int(cel.coory)==i:
+                    cel.nceld = n
+                    n=n+1
+def ForCeldsMxy(Drawing):
+    listac=Drawing.celdas
+    fil=int(Drawing.nFil)
+    col=int(Drawing.nCol)
+    n=1
+    for i in range(fil,-1,-1):
+        for j in range(col,-1,-1):
+            for cel in listac:
+                if int(cel.coorx) == j and int(cel.coory)==i:
+                    cel.nceld = n
+                    n=n+1
+def ConvIMG(named,filt):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    
+       
+    if filt == 0:
+        imgkit.from_file(dir_path+"\\HTML_0_"+named+".html",dir_path+"\\D_0_"+named+".jpg")
+    elif filt == 1:
+        imgkit.from_file(dir_path+"\\HTML_1_"+named+".html",dir_path+"\\D_1_"+named+".jpg")
+    elif filt == 2:
+        imgkit.from_file(dir_path+"\\HTML_2_"+named+".html",dir_path+"\\D_2_"+named+".jpg")
+    elif filt == 3:
+        imgkit.from_file(dir_path+"\\HTML_3_"+named+".html",dir_path+"\\D_3_"+named+".jpg")

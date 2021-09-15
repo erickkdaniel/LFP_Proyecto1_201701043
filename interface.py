@@ -6,6 +6,9 @@ from main import AddDoc
 from main import ReportToken
 from main import ReportError
 from main import DibujarImagen
+from main import DrawingStyle
+from main import DrawingHtml
+from main import ForFilt
 from main import ListDoc , ListDraws
 listDocComb = []
 listDrawComb = []
@@ -47,13 +50,14 @@ class Window(ttk.Frame):
         self.Imagen_label = ttk.Label(self.notebook)
         self.notebook.add(self.Imagen_label, text="Imagen", padding=20)
         self.combodraws = ttk.Combobox(self.Imagen_label,state="readonly")
+        self.combodraws.bind("<<ComboboxSelected>>",lambda _ : self.SelectedDraw())
         self.combodraws.place(x=10,y=20,width=160)
         self.combodraws.set("Seleccione una imagen...")
         self.selecdraw = self.combodraws.get()
-        ttk.Button(self.Imagen_label,text="Original",command=self.Dibujar).place(x=20,y=60,width=100)
-        ttk.Button(self.Imagen_label,text="Mirror X").place(x=20,y=90,width=100)
-        ttk.Button(self.Imagen_label,text="Mirrox Y").place(x=20,y=120,width=100)
-        ttk.Button(self.Imagen_label,text="Double Mirror").place(x=20,y=150,width=100)
+        self.btOri = ttk.Button(self.Imagen_label,text="Original",command=self.Dibujar).place(x=20,y=60,width=100)
+        self.btMx = ttk.Button(self.Imagen_label,text="Mirror X").place(x=20,y=90,width=100)
+        self.btMy = ttk.Button(self.Imagen_label,text="Mirrox Y").place(x=20,y=120,width=100)
+        self.btMxy = ttk.Button(self.Imagen_label,text="Double Mirror").place(x=20,y=150,width=100)
         prDraw = ttk.Labelframe(self.Imagen_label, text = "Imagen").place(x=180,y=5,width=360,height=315)
         self.notebook.pack(padx=5, pady=5)
         self.pack()
@@ -83,12 +87,15 @@ class Window(ttk.Frame):
                 print(ListDraws)
                 pass
         listDrawComb = []
-        for draw in docac.draws:
-            listDrawComb.append(draw.nameDraw) 
-        self.combodraws['values'] = listDrawComb
         listDocAComb.append(docac.namedoc) 
         self.combordocs['values'] = listDocAComb
         self.docactual=docac
+        lsd = self.docactual.draws
+        for dr in lsd:
+            if dr.Pixeleable:
+                ForFilt(dr)
+                listDrawComb.append(dr.nameDraw) 
+        self.combodraws['values'] = listDrawComb 
 
     def ReportarToken(self):
         docselect = self.combordocs.get()
@@ -108,8 +115,24 @@ class Window(ttk.Frame):
         for i in self.docactual.draws:
             if i.nameDraw == drw:
                 DibujarImagen(i)
-
-
+                DrawingStyle(i)
+                DrawingHtml(i)
+    def SelectedDraw(self):
+        drw=self.combodraws.get()
+        for i in self.docactual.draws:
+            if i.nameDraw == drw:
+                if i.mirrorx:
+                    pass
+                else:
+                    self.btMx = ttk.Button(self.Imagen_label,text="Mirror X",state=DISABLED).place(x=20,y=90,width=100)
+                if i.mirrory:
+                    pass
+                else:
+                    self.btMy = ttk.Button(self.Imagen_label,text="Mirrox Y",state=DISABLED).place(x=20,y=120,width=100)
+                if i.doublemirror:
+                    pass
+                else:
+                    self.btMxy = ttk.Button(self.Imagen_label,text="Double Mirror",state=DISABLED).place(x=20,y=150,width=100)
 
 windRoot = Tk()
 BitWindow = Window(windRoot)
