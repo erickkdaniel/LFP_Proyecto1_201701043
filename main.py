@@ -46,7 +46,7 @@ class Celda:
         if paint.upper() == "TRUE":
             self.paint = True
 class tipoE(Enum):
-    NOIDENTIFICADO=1
+    SIMBOLO_NO_IDENTIFICADO=1
     MAYUSCULA=2
     SINTACTICO=3    
 class Error:
@@ -101,7 +101,6 @@ class Draw:
         return self.filtros
     def addParame(self,val):
         if self.last.upper()=="TITULO": 
-            print("Se agrego en dibujo "+val)
             self.nameDraw = val
         elif self.last.upper()=="ANCHO": 
             self.pxX = val
@@ -121,9 +120,9 @@ class Draw:
         if filer.upper() == "MIRRORX":
             self.mirrorx = True
         elif filer.upper() == "MIRRORY":
-            self.mirrorx = True
+            self.mirrory = True
         elif filer.upper() == "DOUBLEMIRROR":
-            self.mirrorx = True
+            self.doublemirror = True
 
 ListDoc = []
 ListDraws = []
@@ -159,8 +158,6 @@ def EstadoInicial():
     while actualC:
         if actualC.isalpha():
             aux = Letras()
-            
-            print(aux)
             if aux == "FALSE" or aux == "TRUE":
                 celdtemp.setPaint(aux)
                 NToken = Token(tipo.BOOL,aux,Fila,Columna)
@@ -243,19 +240,16 @@ def EstadoInicial():
             NToken = Token(tipo.COMILLAS,'"',Fila,Columna)
             TokensDraw.append(NToken)
             actualD.addParame(aux.replace('"',""))
-            print(aux)
         elif actualC == "=":
             aux = kpopChar()
             NToken = Token(tipo.IGUAL,aux,Fila,Columna)
             TokensDraw.append(NToken)
-            print(aux)
             bol = True
 
         elif actualC.isnumeric():
             aux = Numeros()
             NToken = Token(tipo.NUMERO,aux,Fila,Columna)
             TokensDraw.append(NToken)
-            print(aux)
             if bolc and nceld == 1:
                 celdtemp.setCx(aux)
                 nceld=2
@@ -269,7 +263,6 @@ def EstadoInicial():
                 NError = Error(tipoE.SINTACTICO,aux,Fila,Columna,"No se esperaba un numero")
                 ErrorDraw.append(NError)
                 actualD.Pixeleable = False
-                print("Error sintactico")
         elif actualC == "#":
             aux = Color(True).replace("]","")
             celdtemp.setColor(aux)
@@ -280,19 +273,16 @@ def EstadoInicial():
             TokensDraw.append(NToken)
             NToken = Token(tipo.CORCHETEC,"]",Fila,Columna)
             TokensDraw.append(NToken)            
-            print(aux)
         elif actualC == "{":
             Celds = []
             aux = kpopChar()
             NToken = Token(tipo.LLAVEA,actualC,Fila,Columna)
             TokensDraw.append(NToken)
-            print(aux)
         elif actualC == "}":
             actualD.addCeldas(Celds)
             NToken = Token(tipo.LLAVEC,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             aux = kpopChar()
-            print(aux)
         elif actualC == "[":
             NToken = Token(tipo.CORCHETEA,actualC,Fila,Columna)
             TokensDraw.append(NToken)
@@ -300,22 +290,18 @@ def EstadoInicial():
             celdtemp = Celda()
             bolc = True
             aux = kpopChar()
-            print(aux)
         elif actualC == "]":
             NToken = Token(tipo.CORCHETEC,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             aux = kpopChar()
-            print(aux)
         elif actualC == ",":
             NToken = Token(tipo.COMA,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             aux = kpopChar()
-            print(aux)
         elif actualC == ";":
             NToken = Token(tipo.PUNTOCOMA,actualC,Fila,Columna)
             TokensDraw.append(NToken)
             aux = kpopChar()
-            print(aux)
         elif actualC == "\n":
             aux = kpopChar(True)
         elif actualC == " ":
@@ -324,23 +310,23 @@ def EstadoInicial():
             aux = Arrobas(4)
             arrobas = arrobas+aux
             if len(aux)!=4:
-                Token(tipo.ARROBA,arrobas,Fila,Columna)
+                NToken=Token(tipo.ARROBA,arrobas,Fila,Columna)
+                TokensDraw.append(NToken)
                 NError = Error(tipoE.SINTACTICO,actualC,Fila,Columna,'Se esperaban 4 "@", pero fue corregido')
                 ErrorDraw.append(NError)
-                print(arrobas)
                 if len(actualD.celdas) != 0:
                     ListDraws.append(actualD)
                     actualD=Draw()
             else:
+                NToken=Token(tipo.ARROBA,arrobas,Fila,Columna)
+                TokensDraw.append(NToken)
                 ListDraws.append(actualD)
-                print(aux)
                 actualD=Draw()
                 
         elif actualC == "\t":
             aux = kpopChar()
         else:
-            print("Error Simbolo no definido"+str(actualC))
-            NError = Error(tipoE.NOIDENTIFICADO,actualC,Fila,Columna,'El simbolo "'+str(actualC)+'" no fue definido')
+            NError = Error(tipoE.SIMBOLO_NO_IDENTIFICADO,actualC,Fila,Columna,'El simbolo "'+str(actualC)+'" no fue definido')
             ErrorDraw.append(NError)
             actualD.Pixeleable = False
             kpopChar()
@@ -434,14 +420,11 @@ def kpopChar(salto=False):
         return chr
 def AddDoc(dx):
     global ListDoc
-    print(dx)
     doc = open(dx)
     text = doc.read()
     dxn = dx.split("/")
     namedocdx = dxn[-1]
     ListDoc.append(Document(text,namedocdx))
-    print(ListDoc[0].namedoc)
-
 def ReportToken(doc):
     named = doc.namedoc
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -453,7 +436,7 @@ def ReportToken(doc):
     ListT = doc.tokens
     n=1
     for i in ListT:
-        file.write('<tr><td>'+str(n)+'</td><td>'+str(i.token)+'</td><td>'+str(i.lexe)+'</td><td><B>'+str(i.fila)+'<br></td><td>'+str(i.colum)+'</td></tr>')
+        file.write('<tr><td>'+str(n)+'</td><td>'+str(i.token).replace("tipo.","")+'</td><td>'+str(i.lexe)+'</td><td><B>'+str(i.fila)+'<br></td><td>'+str(i.colum)+'</td></tr>')
         n+=1
     file.write("</tbody></table>")
     file.close()
@@ -469,7 +452,7 @@ def ReportError(doc):
     ListT = doc.errors
     n=1
     for i in ListT:
-        file.write('<tr><td>'+str(n)+'</td><td>'+str(i.type)+'</td><td>'+str(i.char)+'</td><td>'+str(i.fila)+'</td><td>'+str(i.colum)+'</td><td>'+str(i.desc)+'</td></tr>')
+        file.write('<tr><td>'+str(n)+'</td><td>'+str(i.type).replace("tipoE.","")+'</td><td>'+str(i.char)+'</td><td>'+str(i.fila)+'</td><td>'+str(i.colum)+'</td><td>'+str(i.desc)+'</td></tr>')
         n+=1
     file.write("</tbody></table>")
     file.close()
@@ -517,11 +500,7 @@ def DrawingStyle(Drawing,Filt):
     if Filt == 3:
         file = open(dir_path+"\\STYLE_3_"+named+".css", "w")
     file.write("""body {
-    background: #333333;
-    height: 100vh;            
-    display: flex;          
-    justify-content: center;  
-    align-items: center;      
+    display: flex;               
     }""")
     file.write(".canvas {\n")
     file.write("width: "+pixX+"px;\n")   #/* Ancho del lienzo, se asocia al ANCHO de la entrada */
@@ -567,7 +546,7 @@ def DrawingHtml(Drawing,Filt):
         file.write("<!DOCTYPE html><html><head>")
         file.write('<link rel="stylesheet" href="STYLE_3_'+named+'.css">')
     file.write("</head>")
-    file.write("<body>)")
+    file.write("<body>")
     file.write('<div class="canvas">')
     colD=int(Drawing.nCol)
     filD=int(Drawing.nFil)
@@ -578,13 +557,7 @@ def DrawingHtml(Drawing,Filt):
     file.write('</body>')
     file.write('</html>')
     file.close()
-    if Filt == 0:
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        imgkit.from_file(dir_path+"\\HTML_0_"+named+".html",dir_path+"\\D_0_"+named+".jpg")
-
-   
-
-
+    ConvIMG(named,Filt)
 def ForCeldsO(Drawing):
     listac=Drawing.celdas
     fil=int(Drawing.nFil)
@@ -629,15 +602,18 @@ def ForCeldsMxy(Drawing):
                 if int(cel.coorx) == j and int(cel.coory)==i:
                     cel.nceld = n
                     n=n+1
+kitoptions = {
+  "enable-local-file-access": None
+}
 def ConvIMG(named,filt):
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    
-       
     if filt == 0:
-        imgkit.from_file(dir_path+"\\HTML_0_"+named+".html",dir_path+"\\D_0_"+named+".jpg")
+        imgkit.from_file(dir_path+"\\HTML_0_"+named+".html",dir_path+"\\D_0_"+named+".jpg", options=kitoptions)
     elif filt == 1:
-        imgkit.from_file(dir_path+"\\HTML_1_"+named+".html",dir_path+"\\D_1_"+named+".jpg")
+        imgkit.from_file(dir_path+"\\HTML_1_"+named+".html",dir_path+"\\D_1_"+named+".jpg", options=kitoptions)
     elif filt == 2:
-        imgkit.from_file(dir_path+"\\HTML_2_"+named+".html",dir_path+"\\D_2_"+named+".jpg")
+        imgkit.from_file(dir_path+"\\HTML_2_"+named+".html",dir_path+"\\D_2_"+named+".jpg", options=kitoptions)
     elif filt == 3:
-        imgkit.from_file(dir_path+"\\HTML_3_"+named+".html",dir_path+"\\D_3_"+named+".jpg")
+        imgkit.from_file(dir_path+"\\HTML_3_"+named+".html",dir_path+"\\D_3_"+named+".jpg", options=kitoptions)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path+"\\D_3_"+named+".jpg"  
