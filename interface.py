@@ -77,7 +77,7 @@ class Window(ttk.Frame):
         global listDocComb
         dic = str(self.dx.get())
         dxn = dic.split("/")
-        listDocComb.append(dxn[-1])
+        listDocComb.append(dxn[-1].replace(".pxla",""))
         self.combodocsa['values'] = listDocComb     
     def Analizar(self):
         global listDocAComb,listDrawComb

@@ -424,7 +424,7 @@ def AddDoc(dx):
     text = doc.read()
     dxn = dx.split("/")
     namedocdx = dxn[-1]
-    ListDoc.append(Document(text,namedocdx))
+    ListDoc.append(Document(text,namedocdx.replace(".pxla","")))
 def ReportToken(doc):
     named = doc.namedoc
     dir_path = os.path.dirname(os.path.realpath(__file__))
